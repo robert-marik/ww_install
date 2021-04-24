@@ -82,9 +82,9 @@ use constant SMTP_SENDER => 'webwork@localhost';
 use constant WW_DB     => 'webwork';
 use constant WWDB_USER => 'webworkWrite';
 
-use constant CHECKOUT_BRANCH => 0;
-use constant WW_BRANCH => 'master';
-use constant PG_BRANCH => 'master';
+use constant CHECKOUT_BRANCH => 1;
+use constant WW_BRANCH => 'WeBWorK-2.16';
+use constant PG_BRANCH => 'PG-2.16';
 
 use constant SKIP_INSTALL_PREREQUISITES => 0;
 
@@ -111,17 +111,18 @@ my @applicationsList = qw(
   curl
   latex
   pdflatex
-  dvipng
-  mysql
+  convert
+  dvisvgm
+  pdf2svg
   giftopnm
   ppmtopgm
   pnmtops
   pnmtopng
   pngtopnm
   lwp-request
+  curl
   mysql
   mysqldump
-  svn
   git
 );
 
@@ -1454,6 +1455,7 @@ END
 #
 #####################################################################
 
+my $database_driver="mysql";
 
 sub get_database_password {
     my $print_me = <<END;
@@ -1563,6 +1565,7 @@ END
         print_and_log("OK. We won't modify MySQL's default storage engine\n");
     }
 }
+
 # Is there an existing webwork db or would you like me to create one?
 
 sub get_webwork_database {
@@ -1724,8 +1727,8 @@ sub get_webwork {
     my $pg_repo = get_pg_repo(PG_REPO);    #PG_REPO constant defined at top
     my $pg_cmd = [$apps->{git},'clone',$pg_repo];
 
-    my $opl_repo = get_opl_repo(OPL_REPO);    #OPL_REPO constant defined at top
-    my $opl_cmd = [$apps->{git},'clone',$opl_repo];
+    #my $opl_repo = get_opl_repo(OPL_REPO);    #OPL_REPO constant defined at top
+    #my $opl_cmd = [$apps->{git},'clone',$opl_repo];
 
     my $buffer;
     my $ww2_success = run_command($ww2_cmd);
@@ -1756,57 +1759,14 @@ sub get_webwork {
     make_path( 'courses',   { owner => $wwadmin, group => $wwadmin } );
     chdir "$prefix/libraries";
 
-    my $opl_success = run_command($opl_cmd);;
-    if ($opl_success) {
-        print_and_log("Fetched OPL successfully\n");
-    } else {
-        print_and_log("Couldn't get OPL!\n");
-    }
+    #my $opl_success = run_command($opl_cmd);;
+    #if ($opl_success) {
+    #    print_and_log("Fetched OPL successfully\n");
+    #} else {
+    #    print_and_log("Couldn't get OPL!\n");
+    #}
 }
 
-#############################################################
-#
-# Unpack jsMath fonts
-#
-#############################################################
-
-sub unpack_jsMath_fonts {
-    my $webwork_dir = shift;
-    
-    # check if jsMath even exists, since it doesn't anymore
-    return if (!(-e "$webwork_dir/htdocs/jsMath/jsMath-fonts.tar.gz"));
-
-    # cd /opt/webwork/webwork2/htdocs/jsMath
-    chdir("$webwork_dir/htdocs/jsMath");
-    system("tar vfxz jsMath-fonts.tar.gz");
-    my $cmd = ["tar","vfxz","jsMath-fonts.tar.gz"];
-    my $success = run_command($cmd);
-    if ($success) {
-        print_and_log("Unpacked jsMath fonts successfully!\n");
-    } else {
-        print_and_log("Could not unpack jsMath fonts! Maybe it doesn't matter.\n");
-    }
-    
-}
-
-sub get_MathJax {
-    my $WW_PREFIX = shift;
-    chdir($WW_PREFIX);
-
-    my $full_path = can_run('git');
-    #As of ww2.8, MathJax is no longer a git submodule.
-    #pre-2.8 code: 
-    #command: system("git submodule update --init");
-    #my $cmd = [ $full_path, 'submodule', "update", "--init" ];
-
-    my $cmd = [ $full_path, 'clone', MATHJAX_REPO];
-    my $success = run_command($cmd);
-    if ($success) {
-        print_and_log("Downloaded MathJax to $WW_PREFIX/MathJax\n");
-    } else {
-        print_and_log("Could not download MathJax. You'll have to do this manually.\n");
-    }
-}
 
 #copy("adminClasslist.lst","$prefix/courses/adminClasslist.lst");
 #copy("defaultClasslist.lst","$prefix/courses/defaultClasslist.lst");
@@ -1858,7 +1818,7 @@ sub write_site_conf {
     my (
         $WW_PREFIX,         $conf_dir,          $webwork_url,
         $server_root_url,   $apache,            $database_dsn,
-        $database_username, $database_password, $apps,
+        $database_username, $database_password, $apps, $database_driver,
 	$mail
     ) = @_;
     open( my $in, "<", "$conf_dir/site.conf.dist" )
@@ -1878,11 +1838,13 @@ sub write_site_conf {
             print $out "\$database_dsn = \"$database_dsn\";\n";
         } elsif (/^\$database_username/) {
             print $out "\$database_username = \"$database_username\";\n";
+        } elsif (/^\$database_driver/) {
+            print $out "\$database_driver = \"$database_driver\";\n";
         } elsif (/^\$database_password/) {
             print $out "\$database_password = \'$database_password\';\n";
         } elsif (/^\$externalPrograms\{(\w+)\}/) {
 	    next if ( $1 =~ /tth/ );
-	    print $out "\$externalPrograms{$1} = \"$$apps{$1}\";\n";
+            print $out "\$externalPrograms{$1} = \"$$apps{$1}\";\n";
 	} elsif (/^\$pg_dir/) {
             print $out "\$pg_dir = \"$WW_PREFIX/pg\";\n";
         } elsif (/^\$webwork_courses_dir/) {
@@ -2388,19 +2350,6 @@ get_webwork( $WW_PREFIX, $apps );
 print_and_log(<<EOF);
 #######################################################################
 #
-#
-# Now we will download MathJax.
-#
-# This too may take awhile
-#
-# 
-######################################################################
-EOF
-get_MathJax($WW_PREFIX);
-
-print_and_log(<<EOF);
-#######################################################################
-#
 # Now I'm going to copy some classlist files and the modelCourse/ dir 
 # from webwork2/courses.dist to $webwork_courses_dir.  
 #
@@ -2438,7 +2387,7 @@ EOF
 write_site_conf(
     $WW_PREFIX,         "$webwork_dir/conf", $webwork_url,
     $server_root_url,   $apache,             $database_dsn,
-    $database_username, $database_password,  $apps,
+    $database_username, $database_password,  $apps, $database_driver,
     \%mail		
 );
 
@@ -2514,7 +2463,7 @@ print_and_log(<<EOF);
 # 
 ######################################################################
 EOF
-setup_opl($WW_PREFIX);
+#setup_opl($WW_PREFIX);
 
 
 print_and_log(<<EOF);
@@ -2592,6 +2541,17 @@ if (-e $webwork3log) {
     change_webwork3_log_permissions("$wwadmin:$wwdata",$webwork3log);
     #temporary hack until logs is in the git repo
 }
+
+print_and_log(<<EOF);
+######################################################
+#
+# Installing MathJax3 and other libraries
+#
+#######################################################
+
+EOF
+
+system("cd $webwork_htdocs_dir; npm install");
 
 print_and_log(<<EOF);
 ######################################################

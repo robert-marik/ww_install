@@ -25,14 +25,17 @@ my $binary_prerequisites = {
     tar => '',
     gzip => '',
     unzip => '',
-    dvipng => '',
     curl => '',
     perl => '',
     netpbm => '',  #provides giftopnm, ppmtopgm, pnmtops, pnmtopng, 
                         #and pgntopnm
     git => '',
     svn => '',
-
+    nodejs => '',
+    npm => '',
+    convert => '',
+    pdf2svg => '',
+    
     mysql => '',
     mysql_server => '',
     ssh_server => '',
@@ -43,7 +46,6 @@ my $binary_prerequisites = {
     mod_perl => '',
     mod_apreq => '',
     
-    preview_latex => '',
     texlive => '',
 };
 

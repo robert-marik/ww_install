@@ -1,5 +1,5 @@
-# Package for distribution debian Stretch
-package debian::9;
+# Package for distribution Ubuntu 21.04
+package ubuntu::2104;
 use base qw(blankdistro);
 
 use strict;
@@ -33,8 +33,8 @@ my $binary_prerequisites = {
     svn => 'subversion',
     cpanminus => 'cpanminus',
 
-    mysql => 'mariadb-client',
-    mysql_server => 'mariadb-server',
+    mysql => 'mysql-client',
+    mysql_server => 'mysql-server',
     ssh_server => 'openssh-server',
 
     apache2 => 'apache2',
@@ -43,14 +43,14 @@ my $binary_prerequisites = {
     mod_perl => 'libapache2-mod-perl2',
     mod_apreq => 'libapache2-mod-apreq2',
 
-    nodejs => '',
-    npm => '',
+    nodejs => 'nodejs',
+    npm => 'npm',
     convert => 'imagemagick',
     pdf2svg => 'pdf2svg',
     #preview_latex => 'preview-latex-style',
     texlive => 'texlive-latex-base',
-    #texlive_recommended => 'texlive-latex-recommended',
-    #texlive_extra => 'texlive-latex-extra',
+    texlive_recommended => 'texlive-latex-recommended',
+    texlive_extra => 'texlive-latex-extra',
     #texlive_fonts_recommended => 'texlive-fonts-recommended',
 
     libscalar_list_utils_perl => 'libscalar-list-utils-perl',
@@ -62,7 +62,6 @@ sub get_binary_prerequisites {
 
 # A list of perl modules that we need
 my $perl_prerequisites = {
-    'List::Util' => 'CPAN',
     'Apache2::Request' => 'libapache2-request-perl',
     'Apache2::Cookie' => 'libapache2-request-perl',
     'Apache2::ServerRec' => 'libapache2-mod-perl2',
@@ -84,10 +83,10 @@ my $perl_prerequisites = {
     'DBD::mysql' => 'libdbd-mysql-perl',
     'DBI' => 'libdbi-perl',
     'Digest::MD5' => 'perl',
-    'Email::Address' => 'CPAN',
-    'Email::Address::XS' => 'CPAN',
+    'Email::Address' => 'libemail-address-perl',
+    'Email::Address::XS' => 'libemail-address-xs-perl',
     'Email::Simple' => 'libemail-simple-perl',
-    'Email::Sender::Simple' => 'CPAN',
+    'Email::Sender::Simple' => 'libemail-sender-perl',
     'Email::Sender::Transport::SMTP' => 'libemail-sender-perl',
     'Errno' => 'perl-base',
     'Exception::Class' => 'libexception-class-perl',
@@ -175,20 +174,10 @@ sub get_apacheLayout {
 }
 
 # A command for updating the package sources
-
-sub edit_sources_list {
-  #make sure we don't try to get anything off of 
-  #a cdrom. (Allowing it causes script to hang 
-  # on Debian 7)
-  #sed -i -e 's/deb cdrom/#deb cdrom/g' /etc/apt/sources.list
-  my $sources_list = shift;
-  backup_file($sources_list);
-  my $string = slurp_file($sources_list);
-  open(my $new,'>',$sources_list);
-  $string =~ s/deb\s+cdrom/#deb cdrom/g;
-  print $new $string;
-  print_and_log("Modified $sources_list to remove cdrom from list of package repositories.");
-}
+sub update_sources {
+    run_command(['sed','-i','-e','s/^# deb \(.*\) partner/deb \1 partner/','/etc/apt/sources.list']);
+    run_command(['sed','-i','-e','s/^# deb-src \(.*\) partner/deb-src \1 partner/','/etc/apt/sources.list']);
+};
 
 # A command for updating the system
 sub update_packages {

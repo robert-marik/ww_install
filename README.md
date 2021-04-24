@@ -5,7 +5,43 @@ This repository consists of a perl script `ww_install.pl`, along with some suppo
 config files, and perl modules designed to work together install the open source online homework system 
 [WeBWorK](https://github.com/openwebwork).
 
-The script has been updated to install WeBWorK 2.13 as of 12/1/2017 by Arnold Pizer.
+The original script has been updated to install WeBWorK 2.13 as of 12/1/2017 by Arnold Pizer.
+
+===================================
+The script has been further updated to install WeBWorK 2.16 as of 04/2021 by Robert Marik.
+
+The OPL library is not installed. 
+
+The following systems have been tested. The other systems probably will not work.
+
+Debian 10: works out of the box
+
+Debian 9: 
+
+    * You have to install npm first. Use lts version. Follow commands and instrucitons from 
+	   debian9npm.sh 
+	* The first run of the installation script fails, but libraries from distribution are updated from CTAN to more recent versions. The second run does the job.
+	* The compilation of LaTeX files may not work and may complain about missing style files. However, do not install texlive-latex-recommended package. Install sty files by hand. This saves 1GB on the disc and hundreds of MB on download during installation. (The package installs a lot of documentation.)
+
+Ubuntu 21.04: works out of the box
+    * run 
+	   sudo chown www-data /opt/webwork/webwork2/htdocs/tmp 
+	after the installation. This makes the tmp directory writeable for
+    apache process.
+
+
+After installation:
+
+* You may want to install OPL and run OPL-update manually.
+* You may want to set 
+      $permissionLevels{modify_tags} = "nobody";
+  in the file /opt/webwork/webwork2/conf/local.overrides set 
+  see https://webwork.maa.org/moodle/mod/forum/discuss.php?d=4819
+
+The rest if this file is from the old version of the script. May
+contain useful but outdated informations
+
+===================================
 
 Temporary General Instructions for installing WeBWorK 2.13 using the ww_install script. 
 *  You should use the perl script ww_install.pl as the bash shell script install_webwork.sh has not yet been updated.

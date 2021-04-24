@@ -71,8 +71,10 @@ sub create_database {
     $dbh->do("CREATE DATABASE IF NOT EXISTS $ww_db")
       or die "Could not create $ww_db database: $!\n";
     print_and_log("Created $ww_db database...");
+    $dbh->do("CREATE USER '$ww_user'\@'localhost' IDENTIFIED BY '$ww_pw'")
+	or die "Could not create $ww_user user: $!\n";
     $dbh->do(
-"GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, LOCK TABLES ON $ww_db.* TO $ww_user\@localhost IDENTIFIED BY '$ww_pw'"
+"GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, LOCK TABLES ON $ww_db.* TO $ww_user\@localhost"
       )
       or (print_and_log("Could not grant privileges to $ww_user on $ww_db database: $!") && die);
       
