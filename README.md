@@ -23,6 +23,8 @@ Debian 9:
 	* The first run of the installation script fails, but libraries from distribution are updated from CTAN to more recent versions. The second run does the job.
 	* The compilation of LaTeX files may not work and may complain about missing style files. However, do not install texlive-latex-recommended package. Install sty files by hand. This saves 1GB on the disc and hundreds of MB on download during installation. (The package installs a lot of documentation.)
 
+Ubuntu 20.04: works out of the box
+
 Ubuntu 21.04: works almost out of the box
     * run 
 	   sudo chown www-data /opt/webwork/webwork2/htdocs/tmp 
